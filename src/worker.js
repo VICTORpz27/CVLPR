@@ -17,7 +17,7 @@ async function classify(env,body){
   const raw=result.response||'';const parsed=JSON.parse(raw.match(/\{[\s\S]*?\}/)?.[0]||'{}');
   if(!categories.includes(parsed.category)||!['approved','spam','review'].includes(parsed.moderation))throw Error('Invalid classification');
   return parsed;
- }catch{return {category:'À vérifier',moderation:'review'}}
+ }catch(e){   console.error('Erreur classification IA :', e);   return {category:'À vérifier',moderation:'review'}; }
 }
 async function rateLimit(env,key,max,windowMs){const now=Date.now();const existing=await env.DB.prepare('SELECT count,expires_at FROM rate_limits WHERE key=?').bind(key).first();if(existing&&existing.expires_at>now&&existing.count>=max)return false;await env.DB.prepare('INSERT INTO rate_limits(key,count,expires_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET count=excluded.count,expires_at=excluded.expires_at').bind(key,existing&&existing.expires_at>now?existing.count+1:1,existing&&existing.expires_at>now?existing.expires_at:now+windowMs).run();return true}
 async function turnstile(env,token,ip){if(!env.TURNSTILE_SECRET)return false;const form=new FormData();form.append('secret',env.TURNSTILE_SECRET);form.append('response',token||'');if(ip)form.append('remoteip',ip);const res=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:form});return !!(await res.json()).success}
