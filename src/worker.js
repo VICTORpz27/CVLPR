@@ -18,7 +18,11 @@ async function classify(env,body){
   if(!categories.includes(parsed.category)||!['approved','spam','review'].includes(parsed.moderation))throw Error('Invalid classification');
   return parsed;
 }catch(e){
-  console.error('Erreur classification IA :', e);
+  console.error('Erreur classification IA :', {
+    name: e?.name,
+    message: e?.message,
+    stack: e?.stack
+  });
   return {category:'À vérifier',moderation:'review'};
 }
 }
