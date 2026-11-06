@@ -45,12 +45,23 @@
       <p id="setup-message" class="feedback" role="status"></p>
     </section>
 
+    <section id="password-required" class="panel auth" hidden>
+      <span class="eyebrow">SÉCURITÉ DU COMPTE</span><h1>Définir votre mot de passe</h1>
+      <p>Votre mot de passe est temporaire. Vous devez le remplacer avant d'accéder à l'administration.</p>
+      <form id="forced-password-form">
+        <label for="forced-current">Mot de passe temporaire</label><input id="forced-current" type="password" autocomplete="current-password" required>
+        <label for="forced-new">Nouveau mot de passe (12 caractères minimum)</label><input id="forced-new" type="password" minlength="12" maxlength="256" autocomplete="new-password" required>
+        <label for="forced-confirm">Confirmer le nouveau mot de passe</label><input id="forced-confirm" type="password" minlength="12" maxlength="256" autocomplete="new-password" required>
+        <button class="btn btn-dark" type="submit">Enregistrer mon mot de passe</button>
+      </form><p id="forced-password-message" class="feedback" role="status"></p>
+    </section>
     <section id="dashboard" hidden>
       <div class="dash-heading">
         <div><span class="eyebrow">ESPACE DE GESTION</span><h1>Tableau de bord</h1><p id="welcome"></p></div>
       </div>
       <nav class="main-tabs" aria-label="Sections de l'administration">
         <button id="tab-suggestions" class="main-tab active" type="button" aria-selected="true">Suggestions</button>
+        <button id="tab-account" class="main-tab" type="button" aria-selected="false">Mon compte</button>
         <button id="tab-personnel" class="main-tab" type="button" aria-selected="false" hidden>Personnel</button>
       </nav>
 
@@ -70,6 +81,16 @@
         </div>
       </section>
 
+      <section id="account-view" hidden aria-label="Mon compte">
+        <div class="panel content-panel"><h2>Changer mon mot de passe</h2>
+          <form id="account-password-form">
+            <label for="account-current">Mot de passe actuel</label><input id="account-current" type="password" autocomplete="current-password" required>
+            <label for="account-new">Nouveau mot de passe (12 caractères minimum)</label><input id="account-new" type="password" minlength="12" maxlength="256" autocomplete="new-password" required>
+            <label for="account-confirm">Confirmer le nouveau mot de passe</label><input id="account-confirm" type="password" minlength="12" maxlength="256" autocomplete="new-password" required>
+            <button class="btn btn-dark" type="submit">Modifier mon mot de passe</button>
+          </form><p id="account-password-message" class="feedback" role="status"></p>
+        </div>
+      </section>
       <section id="personnel-view" hidden aria-label="Gestion du personnel">
         <div class="panel content-panel">
           <div class="section-heading"><div><span class="eyebrow">ACCÈS ET AUTORISATIONS</span><h2>Gestion du personnel</h2></div><button id="reload-users" class="btn btn-outline" type="button">Actualiser</button></div>
@@ -81,7 +102,7 @@
           <form id="new-user">
             <div class="three">
               <div><label for="new-username">Identifiant</label><input id="new-username" required minlength="3" maxlength="40" autocomplete="off"></div>
-              <div><label for="new-password">Mot de passe initial</label><input id="new-password" type="password" minlength="12" required autocomplete="new-password"></div>
+              <div><label for="new-password">Mot de passe temporaire</label><input id="new-password" type="password" minlength="12" required autocomplete="new-password"></div>
               <div><label for="new-role">Rôle</label><select id="new-role"><option value="reader">Lecteur</option><option value="member">Membre CVL</option><option value="admin">Admin</option></select></div>
             </div>
             <button class="btn btn-dark" type="submit">Créer le compte</button>
