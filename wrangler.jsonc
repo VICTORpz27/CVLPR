@@ -7,6 +7,9 @@
   "observability": {
     "enabled": true
   },
+  "triggers": {
+    "crons": ["0 3 * * 0"]
+  },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
