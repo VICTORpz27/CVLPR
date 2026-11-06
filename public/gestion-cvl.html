@@ -1,1 +1,107 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Administration — CVL Pierre Rouges</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/admin.css"></head><body><main class="admin-main"><header class="admin-top"><a href="/">Boîte à idées · CVL Pierre Rouges</a><button id="logout" class="small" hidden>Déconnexion</button></header><section id="auth" class="panel auth"><h1>Accès CVL</h1><p>Connectez-vous pour consulter les suggestions.</p><form id="login-form"><label for="username">Identifiant</label><input id="username" autocomplete="username" required><label for="password">Mot de passe</label><input id="password" type="password" autocomplete="current-password" required><button class="primary">Se connecter</button></form><p id="login-message" role="status"></p></section><section id="setup" class="panel auth" hidden><h1>Initialiser le CVL</h1><p>Première installation uniquement : créez le compte Super Admin.</p><form id="setup-form"><label for="secret">Clé SETUP_SECRET</label><input id="secret" type="password" required><label for="setup-user">Identifiant</label><input id="setup-user" required><label for="setup-password">Mot de passe (12 caractères minimum)</label><input id="setup-password" type="password" minlength="12" required><button class="primary">Créer le Super Admin</button></form><p id="setup-message" role="status"></p></section><section id="dashboard" hidden><div class="dash-heading"><div><h1>Tableau de bord</h1><p id="welcome"></p></div></div><div id="stats" class="stats"></div><div class="panel"><div class="row"><h2>Suggestions</h2><select id="filter"><option value="">Toutes</option><option value="approved">Retenues</option><option value="review">À vérifier</option><option value="spam">Spam</option><option value="duplicate">Doublons</option></select></div><div id="suggestions" class="suggestions"></div></div><div class="panel" id="users-panel" hidden><div class="row"><h2>Comptes CVL</h2><button id="reload-users" class="small">Actualiser</button></div><div id="users"></div><h3>Ajouter un membre</h3><form id="new-user"><div class="three"><div><label for="new-username">Identifiant</label><input id="new-username" required></div><div><label for="new-password">Mot de passe initial</label><input id="new-password" type="password" minlength="12" required></div><div><label for="new-role">Rôle</label><select id="new-role"><option value="reader">Lecteur</option><option value="member">Membre</option><option value="admin">Admin</option></select></div></div><button class="primary">Créer le compte</button></form><p id="users-message" role="status"></p></div></section></main><script src="/admin.js" defer></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#111214">
+  <title>Administration — CVL Pierre Rouges</title>
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <main class="admin-main">
+    <header class="admin-top">
+      <a class="brand" href="/" aria-label="Retour au site CVL"><span class="brand-mark">CVL</span><span>Pierre Rouges <small>Administration</small></span></a>
+      <button id="logout" class="btn btn-outline" type="button" hidden>Déconnexion</button>
+    </header>
+
+    <section id="auth" class="panel auth">
+      <span class="eyebrow">ESPACE PRIVÉ</span>
+      <h1>Connexion</h1>
+      <p>Accédez à l'administration du CVL.</p>
+      <form id="login-form">
+        <label for="username">Identifiant</label>
+        <input id="username" autocomplete="username" required>
+        <label for="password">Mot de passe</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-dark" type="submit">Se connecter</button>
+      </form>
+      <p id="login-message" class="feedback" role="status"></p>
+    </section>
+
+    <section id="setup" class="panel auth" hidden>
+      <span class="eyebrow">PREMIÈRE INSTALLATION</span>
+      <h1>Initialiser le CVL</h1>
+      <p>Créez le premier compte Super Admin.</p>
+      <form id="setup-form">
+        <label for="secret">Clé SETUP_SECRET</label>
+        <input id="secret" type="password" required>
+        <label for="setup-user">Identifiant</label>
+        <input id="setup-user" autocomplete="username" required>
+        <label for="setup-password">Mot de passe (12 caractères minimum)</label>
+        <input id="setup-password" type="password" autocomplete="new-password" minlength="12" required>
+        <button class="btn btn-dark" type="submit">Créer le Super Admin</button>
+      </form>
+      <p id="setup-message" class="feedback" role="status"></p>
+    </section>
+
+    <section id="dashboard" hidden>
+      <div class="dash-heading">
+        <div><span class="eyebrow">ESPACE DE GESTION</span><h1>Tableau de bord</h1><p id="welcome"></p></div>
+      </div>
+      <nav class="main-tabs" aria-label="Sections de l'administration">
+        <button id="tab-suggestions" class="main-tab active" type="button" aria-selected="true">Suggestions</button>
+        <button id="tab-personnel" class="main-tab" type="button" aria-selected="false" hidden>Personnel</button>
+      </nav>
+
+      <section id="suggestions-view" aria-label="Gestion des suggestions">
+        <div id="stats" class="stats" aria-label="Filtrer par statut"></div>
+        <div class="panel content-panel">
+          <div class="section-heading"><div><span class="eyebrow">MODÉRATION</span><h2>Suggestions</h2></div><button id="reload-suggestions" class="btn btn-outline" type="button">Actualiser</button></div>
+          <div class="toolbar">
+            <div class="search-wrap"><label for="search">Rechercher une suggestion</label><input id="search" type="search" placeholder="Mot-clé, texte, classe…" autocomplete="off"></div>
+            <div class="sort-wrap"><label for="sort">Trier par</label><select id="sort"><option value="recent">Plus récentes</option><option value="oldest">Plus anciennes</option><option value="category">Catégorie (A–Z)</option><option value="popular">Plus proposées (si disponible)</option></select></div>
+          </div>
+          <div class="filter-heading"><h3>Catégories</h3><button id="clear-filters" class="text-button" type="button">Effacer les filtres</button></div>
+          <div id="category-filters" class="category-filters" aria-label="Filtrer par catégorie"></div>
+          <div class="results-heading"><p id="results-count" aria-live="polite"></p><p id="results-note" class="muted"></p></div>
+          <div id="suggestions" class="suggestions"></div>
+          <p id="suggestions-message" class="feedback" role="status"></p>
+        </div>
+      </section>
+
+      <section id="personnel-view" hidden aria-label="Gestion du personnel">
+        <div class="panel content-panel">
+          <div class="section-heading"><div><span class="eyebrow">ACCÈS ET AUTORISATIONS</span><h2>Gestion du personnel</h2></div><button id="reload-users" class="btn btn-outline" type="button">Actualiser</button></div>
+          <p class="muted">Gérez les comptes CVL et leurs droits d'accès.</p>
+          <div id="users" class="users"></div>
+        </div>
+        <div class="panel content-panel">
+          <h2>Ajouter un membre</h2>
+          <form id="new-user">
+            <div class="three">
+              <div><label for="new-username">Identifiant</label><input id="new-username" required minlength="3" maxlength="40" autocomplete="off"></div>
+              <div><label for="new-password">Mot de passe initial</label><input id="new-password" type="password" minlength="12" required autocomplete="new-password"></div>
+              <div><label for="new-role">Rôle</label><select id="new-role"><option value="reader">Lecteur</option><option value="member">Membre CVL</option><option value="admin">Admin</option></select></div>
+            </div>
+            <button class="btn btn-dark" type="submit">Créer le compte</button>
+          </form>
+          <p id="users-message" class="feedback" role="status"></p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-title" aria-describedby="delete-description">
+    <form method="dialog" id="delete-form">
+      <span class="danger-icon" aria-hidden="true">!</span>
+      <h2 id="delete-title">Supprimer cette suggestion ?</h2>
+      <p id="delete-description">Cette action est définitive. La suggestion sera effacée de la base de données.</p>
+      <div id="delete-preview" class="delete-preview"></div>
+      <p id="delete-error" class="feedback" role="alert"></p>
+      <div class="dialog-actions"><button id="cancel-delete" class="btn btn-outline" type="button">Annuler</button><button id="confirm-delete" class="btn btn-danger" type="button">Supprimer définitivement</button></div>
+    </form>
+  </dialog>
+  <script src="/admin.js" defer></script>
+</body>
+</html>
