@@ -23,6 +23,41 @@ const validPassword=p=>typeof p==='string'&&p.length>=12&&p.length<=256;
 const authorized=(user,roles)=>!!user&&roles.includes(user.role);
 async function log(env,user,action,target){await env.DB.prepare('INSERT INTO audit_log(id,user_id,action,target_id) VALUES (?,?,?,?)').bind(uid(),user?.id||null,action,target||null).run();}
 function normalize(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+// Doublon quasi identique : espaces, ponctuation, accents, casse et
+// petites fautes/lettres ajoutées. Ne compare pas les reformulations réelles.
+function nearDuplicate(a,b){
+  const x=normalize(a),y=normalize(b);
+  if(x===y)return true;
+  const longest=Math.max(x.length,y.length);
+  // Sur les phrases courtes, une petite différence peut changer le sens.
+  if(longest<35||longest>500)return false;
+  const limit=Math.min(5,Math.floor(longest*0.05));
+  if(Math.abs(x.length-y.length)>limit)return false;
+  // Distance de Levenshtein bornée : arrêt rapide au-delà du seuil.
+  let previous=Array.from({length:y.length+1},(_,i)=>i);
+  for(let i=1;i<=x.length;i++){
+    const next=[i];let rowMin=i;
+    for(let j=1;j<=y.length;j++){
+      const cost=x[i-1]===y[j-1]?0:1;
+      const value=Math.min(previous[j]+1,next[j-1]+1,previous[j-1]+cost);
+      next[j]=value;if(value<rowMin)rowMin=value;
+    }
+    if(rowMin>limit)return false;
+    previous=next;
+  }
+  return previous[y.length]<=limit;
+}
+// Une répétition très proche envoyée dans les 5 minutes est un doublon probable.
+// L'adresse IP n'intervient pas dans cette décision.
+const DUPLICATE_WINDOW_SECONDS=300;
+async function findRecentDuplicate(env,body){
+  const rows=(await env.DB.prepare(`SELECT id,body,category FROM suggestions
+    WHERE created_at>=datetime('now', '-' || ? || ' seconds')
+      AND moderation IN ('approved','duplicate')
+    ORDER BY created_at DESC LIMIT 200`)
+    .bind(DUPLICATE_WINDOW_SECONDS).all()).results||[];
+  return rows.find(row=>nearDuplicate(body,row.body))||null;
+}
 function parseAI(result){
   const raw=result?.response??result;
   if(typeof raw==='object'&&raw!==null)return raw;
@@ -135,19 +170,26 @@ export default {
         const key=await sha(ip+':'+(env.RATE_LIMIT_SALT||'cvl'));
         if(!await rateLimit(env,'submit:'+key,4,600000))return json({error:'Trop de suggestions en peu de temps. Réessayez plus tard.'},429);
         const fingerprint=await sha(normalize(body));
-        const recent=await env.DB.prepare(`SELECT id,category,moderation,group_id FROM suggestions WHERE fingerprint=? AND created_at>datetime('now','-1 day') ORDER BY created_at DESC LIMIT 1`).bind(fingerprint).first();
-        // Les répétitions exactes d'une idée retenue restent des contributions valables.
-        // Un spam identique reste spam ; un message ambigu reste à vérifier.
+        // Le texte doit être quasiment copié ET envoyé dans les 5 minutes.
+        // Une idée réellement reformulée reste une contribution distincte.
+        const duplicate=await findRecentDuplicate(env,body);
         let classification;
-        if(recent?.moderation==='approved')classification={category:recent.category,moderation:'approved'};
-        else if(recent?.moderation==='spam')classification={category:recent.category,moderation:'spam'};
-        else classification=await classify(env,body);
+        if(duplicate){
+          classification={category:duplicate.category,moderation:'duplicate'};
+        }else{
+          // Conserve le filtrage des répétitions exactes de spam récentes.
+          const recent=await env.DB.prepare(`SELECT category,moderation FROM suggestions
+            WHERE fingerprint=? AND created_at>datetime('now','-1 day')
+            ORDER BY created_at DESC LIMIT 1`).bind(fingerprint).first();
+          classification=recent?.moderation==='spam'
+            ? {category:recent.category,moderation:'spam'}
+            : await classify(env,body);
+        }
         const item={id:uid(),body,firstname:firstname||null,lastname:lastname||null,className:className||null,category:classification.category,moderation:classification.moderation,fingerprint};
         let group=null;
-        if(item.moderation==='approved'){
-          if(recent?.moderation==='approved'&&recent.group_id)group={id:recent.group_id};
-          else group=await chooseGroup(env,body,item.category,fingerprint);
-        }
+        // Les formulations différentes d'une même idée continuent d'être regroupées.
+        // Les doublons exacts ou quasi identiques vont dans l'onglet « Doublons ».
+        if(item.moderation==='approved')group=await chooseGroup(env,body,item.category,fingerprint);
         await insertSuggestion(env,item,group);
         return json({ok:true,message:'Votre suggestion a bien été reçue. Merci !'},201);
       }
