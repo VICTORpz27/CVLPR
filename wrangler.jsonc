@@ -1,19 +1,28 @@
+
 {
-  "name": "cvl-pierre-rouges",
+  "name": "cvlpr",
   "main": "src/worker.js",
   "compatibility_date": "2026-09-01",
   "keep_vars": true,
-  "observability": { "enabled": true },
-  "triggers": { "crons": ["0 3 * * 0"] },
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": ["0 3 * * SUN"]
+  },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },
-  "d1_databases": [{
-    "binding": "DB",
-    "database_name": "cvl-idees",
-    "database_id": "5799f1fe-63e0-4831-9c92-12278fc26fc0"
-  }],
-  "ai": { "binding": "AI" }
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cvl-idees",
+      "database_id": "5799f1fe-63e0-4831-9c92-12278fc26fc0"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  }
 }
