@@ -235,7 +235,7 @@ export default {
         if(!authorized(user,['superadmin','admin']))return json({error:'Accès refusé.'},403);
         const d=await read(req);
         if(!/^[a-zA-Z0-9._-]{3,40}$/.test(d.username||'')||!validPassword(d.password))return json({error:'Identifiant invalide ou mot de passe trop court (12 caractères minimum).'},400);
-        const roles=['admin','member','reader',...(user.role==='superadmin'?['superadmin']:[])];if(!roles.includes(d.role))return json({error:'Rôle non autorisé.'},403);
+        const roles=['admin','member',...(user.role==='superadmin'?['superadmin']:[])];if(!roles.includes(d.role))return json({error:'Rôle non autorisé.'},403);
         if(d.role==='superadmin'&&(user.role!=='superadmin'||!validSetupSecret(env,d.setupSecret)))return json({error:'Clé SETUP_SECRET obligatoire pour créer un Super Admin.'},403);
         const salt=uid(),id=uid();await env.DB.prepare('INSERT INTO users(id,username,password_hash,salt,role,must_change_password) VALUES (?,?,?,?,?,1)').bind(id,d.username,await passwordHash(d.password,salt),salt,d.role).run();await log(env,user,'user.create',id);return json({ok:true},201);
       }
@@ -278,7 +278,7 @@ export default {
         if(!authorized(user,['superadmin','admin']))return json({error:'Accès refusé.'},403);
         const id=path.split('/').pop(),target=await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();if(!target)return json({error:'Compte introuvable.'},404);
         if(target.id===user.id||(target.role==='superadmin'&&user.role!=='superadmin'))return json({error:'Modification non autorisée.'},403);
-        const d=await read(req),roles=['admin','member','reader',...(user.role==='superadmin'?['superadmin']:[])];
+        const d=await read(req),roles=['admin','member',...(user.role==='superadmin'?['superadmin']:[])];
         if(!roles.includes(d.role)||![0,1].includes(d.active))return json({error:'Paramètres invalides.'},400);
         if((target.role==='superadmin'||d.role==='superadmin')&&(user.role!=='superadmin'||!validSetupSecret(env,d.setupSecret)))return json({error:'Clé SETUP_SECRET obligatoire pour modifier un Super Admin ou attribuer ce rôle.'},403);
         if(target.role==='superadmin'&&d.role!=='superadmin'){const total=await env.DB.prepare("SELECT COUNT(*) AS n FROM users WHERE role='superadmin'").first();if(Number(total?.n)<=1)return json({error:'Impossible de retirer le rôle du dernier Super Admin.'},403);}
